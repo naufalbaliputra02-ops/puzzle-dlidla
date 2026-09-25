@@ -30,9 +30,10 @@ function labelTexture(text, color, { bg = null, size = 128, font = 'bold 84px sy
 const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
 
 export class GameScene {
-  constructor(canvas, { heroGltf, badgeGltf }) {
+  constructor(canvas, { heroGltf, badgeGltf, lowPower = false }) {
+    this.lowPower = lowPower;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, lowPower ? 1.5 : 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -44,12 +45,13 @@ export class GameScene {
     this.scene.environmentIntensity = 0.55;
 
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 80);
+    this.camScale = 1;
     this.camTarget = new THREE.Vector3();
 
     this.scene.add(new THREE.HemisphereLight(0xa8ccff, 0x10183a, 0.75));
     this.sun = new THREE.DirectionalLight(0xffffff, 2.1);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
+    this.sun.shadow.mapSize.setScalar(lowPower ? 1024 : 2048);
     Object.assign(this.sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 0.5, far: 40 });
     this.sun.shadow.bias = -0.0006;
     this.scene.add(this.sun, this.sun.target);
@@ -70,6 +72,11 @@ export class GameScene {
       if (o.isMesh) {
         o.castShadow = !o.material.transparent;
         o.receiveShadow = true;
+        // Transmission forces an extra full-scene render pass every frame; too costly on phones.
+        if (this.lowPower && o.material.transmission > 0) {
+          o.material.transmission = 0;
+          o.material.opacity = 0.3;
+        }
       }
     });
     this.scene.add(this.hero);
@@ -551,7 +558,7 @@ export class GameScene {
     const p = this.world.player;
     const want = new THREE.Vector3(p.x, p.y * 0.7 + 0.6, p.z - 0.8);
     this.camTarget.lerp(want, k);
-    this.camera.position.copy(this.camTarget).add(CAMERA_OFFSET);
+    this.camera.position.copy(this.camTarget).addScaledVector(CAMERA_OFFSET, this.camScale);
     this.camera.lookAt(this.camTarget);
     this.sun.position.copy(this.camTarget).add(new THREE.Vector3(3, 8, 4));
     this.sun.target.position.copy(this.camTarget);
@@ -559,9 +566,15 @@ export class GameScene {
 
   resize(w, h) {
     this.renderer.setSize(w, h, false);
-    this.camera.aspect = w / h;
-    // Keep narrow (portrait) screens showing the whole room width.
-    this.camera.fov = w / h < 1 ? 58 : 40;
+    const aspect = w / h;
+    this.camera.aspect = aspect;
+    this.camera.fov = aspect < 1 ? 50 : 40;
+    // Pull the camera back on narrow (portrait phone) screens so ~7 m of the room stays visible.
+    const halfH = Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * aspect);
+    const visibleHalf = CAMERA_OFFSET.length() * Math.tan(halfH);
+    this.camScale = THREE.MathUtils.clamp(3.5 / visibleHalf, 1, 1.8);
+    this.scene.fog.near = 14 * this.camScale;
+    this.scene.fog.far = 30 * this.camScale;
     this.camera.updateProjectionMatrix();
   }
 

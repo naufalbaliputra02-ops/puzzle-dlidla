@@ -2,7 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1440" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Dli Echoes" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>Dli: Echoes — every failure becomes part of the level</title>
     <link rel="stylesheet" href="/src/game/game.css" />
   </head>
@@ -44,6 +52,19 @@
         </p>
 
         <h3>Controls</h3>
+        <div class="touch-only">
+          <p class="small">Phone / tablet</p>
+          <table class="keys">
+            <tr><td><span class="tchip">Left side of the screen</span></td><td>Drag anywhere to move (virtual joystick)</td></tr>
+            <tr><td><span class="tchip blue">⤒ JUMP</span></td><td>Jump</td></tr>
+            <tr><td><span class="tchip">💠 ECHO</span></td><td>Leave an Echo on purpose and respawn</td></tr>
+            <tr><td><span class="tchip">✖ SHATTER</span></td><td>Shatter your newest Echo</td></tr>
+            <tr><td><span class="tchip orange">? QUIZ</span></td><td>Use a quiz terminal (it glows when one is in reach)</td></tr>
+            <tr><td><span class="tchip">❚❚</span></td><td>Pause (restart, level select)</td></tr>
+          </table>
+          <p class="small">Tip: play in landscape, or tap ⛶ for fullscreen. Use "Add to Home Screen" to play it like an app.</p>
+        </div>
+        <p class="small touch-only">Keyboard</p>
         <table class="keys">
           <tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></td><td>Move</td></tr>
           <tr><td><kbd>Space</kbd></td><td>Jump</td></tr>
@@ -53,7 +74,7 @@
           <tr><td><kbd>1</kbd>–<kbd>4</kbd></td><td>Pick a quiz answer</td></tr>
           <tr><td><kbd>Esc</kbd> / <kbd>P</kbd></td><td>Pause (restart, level select)</td></tr>
         </table>
-        <p class="small">On phones and tablets, use the on-screen buttons.</p>
+        <p class="small kb-only">On phones and tablets, on-screen controls appear automatically.</p>
 
         <h3>What Echoes can do</h3>
         <ul class="rules">
@@ -95,27 +116,27 @@
         </div>
       </div>
       <div class="hud-right">
+        <button class="icon fs-btn hidden" data-action="fullscreen" title="Fullscreen">⛶</button>
         <button class="icon" data-action="hint" title="Show hint">💡</button>
         <button class="icon" data-action="howto" title="How to play">?</button>
         <button class="icon" data-action="pause" title="Pause">❚❚</button>
       </div>
       <div id="hint" class="hint"></div>
-      <div id="prompt" class="prompt hidden">Press <kbd>E</kbd> to answer the quiz</div>
+      <button id="prompt" class="prompt hidden" data-action="use">
+        <span class="kb-only">Press <kbd>E</kbd> to answer the quiz</span><span class="touch-only">Tap here or <b>? QUIZ</b> to answer</span>
+      </button>
       <div id="toasts"></div>
       <div class="keys-bar">WASD move · SPACE jump · R leave Echo · X shatter · E quiz · ESC pause</div>
     </section>
 
     <div id="touch" class="hidden">
-      <div class="dpad">
-        <button data-key="up">▲</button>
-        <button data-key="left">◀</button>
-        <button data-key="down">▼</button>
-        <button data-key="right">▶</button>
-      </div>
+      <div id="stick-zone"></div>
+      <div id="stick-base" class="idle"><div id="stick-knob"></div></div>
       <div class="actions">
-        <button data-key="echo" class="t-echo">R<small>Echo</small></button>
-        <button data-key="interact" class="t-use">E<small>Quiz</small></button>
-        <button data-key="jump" class="t-jump">⤒<small>Jump</small></button>
+        <button data-key="jump" class="t-jump" aria-label="Jump">⤒<small>JUMP</small></button>
+        <button data-key="echo" class="t-echo" aria-label="Leave Echo">💠<small>ECHO</small></button>
+        <button data-key="shatter" class="t-shatter" aria-label="Shatter Echo">✖<small>SHATTER</small></button>
+        <button data-key="interact" class="t-use" aria-label="Quiz">?<small>QUIZ</small></button>
       </div>
     </div>
 
@@ -126,7 +147,7 @@
         <div id="quiz-choices" class="choices"></div>
         <p id="quiz-feedback" class="feedback"></p>
         <p class="small warn">⚡ Wrong answer = ZAP! You leave an Echo right here.</p>
-        <button data-action="quiz-cancel">Walk away (Esc)</button>
+        <button data-action="quiz-cancel">Walk away<span class="kb-only"> (Esc)</span></button>
       </div>
     </section>
 

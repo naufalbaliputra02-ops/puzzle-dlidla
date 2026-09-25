@@ -10,6 +10,13 @@ const $ = (sel) => document.querySelector(sel);
 const params = new URLSearchParams(location.search);
 const SAVE_KEY = 'dli-echoes-progress-v1';
 
+// --- device ------------------------------------------------------------
+let isTouch =
+  params.has('touch') || matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+// Phones get a lighter renderer (lower pixel ratio, smaller shadows, no glass transmission pass).
+const lowPower = params.has('lq') || (!params.has('hq') && isTouch);
+document.body.classList.toggle('touch', isTouch);
+
 // --- progress ----------------------------------------------------------
 const progress = (() => {
   try {
@@ -40,6 +47,7 @@ function show(name) {
   const inGame = name === null || ['quiz', 'pause', 'complete'].includes(name) || (name === 'howto' && world);
   $('#hud').classList.toggle('hidden', !inGame || !world);
   $('#touch').classList.toggle('hidden', name !== null || !isTouch);
+  if (name !== null) resetStick();
   if (name === 'levels') renderLevelGrid();
 }
 const playing = () => screen === null && world && world.state === 'playing';
@@ -63,9 +71,18 @@ function startLevel(i) {
 }
 
 let hintTimer;
+// Level hints are written for keyboards; reword them for touch controls.
+function hintText(text) {
+  if (!isTouch) return text;
+  return text
+    .replace('Move with WASD / Arrow keys and jump with SPACE', 'Drag the left side of the screen to move and tap JUMP')
+    .replace(/\b([Pp])ress R\b/g, (_, p) => `${p === 'P' ? 'T' : 't'}ap 💠 ECHO`)
+    .replace(/\b([Pp])ress X\b/g, (_, p) => `${p === 'P' ? 'T' : 't'}ap ✖ SHATTER`)
+    .replace(/\b([Pp])ress E\b/g, (_, p) => `${p === 'P' ? 'T' : 't'}ap ? QUIZ`);
+}
 function showHint() {
   const el = $('#hint');
-  el.textContent = LEVELS[levelIndex].hint;
+  el.textContent = hintText(LEVELS[levelIndex].hint);
   el.classList.add('show');
   clearTimeout(hintTimer);
   hintTimer = setTimeout(() => el.classList.remove('show'), 9000);
@@ -192,6 +209,8 @@ const actions = {
   restart: () => startLevel(levelIndex),
   next: () => (levelIndex === LEVELS.length - 1 ? show('levels') : startLevel(levelIndex + 1)),
   hint: () => showHint(),
+  use: () => playing() && pressed.add('interact'),
+  fullscreen: () => toggleFullscreen(),
   'quiz-cancel': () => { if (quiz && !quiz.answered) { quiz = null; show(null); } },
 };
 document.addEventListener('click', (e) => {
@@ -200,7 +219,6 @@ document.addEventListener('click', (e) => {
 });
 
 // --- input -------------------------------------------------------------
-const isTouch = matchMedia('(pointer: coarse)').matches || params.has('touch');
 const held = new Set();
 const pressed = new Set();
 const KEYMAP = {
@@ -228,7 +246,28 @@ addEventListener('keydown', (e) => {
   held.add(k);
 });
 addEventListener('keyup', (e) => held.delete(KEYMAP[e.code]));
-addEventListener('blur', () => held.clear());
+addEventListener('blur', () => { held.clear(); resetStick(); });
+
+// Leaving the app (home button, incoming call, tab switch) pauses the game.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) return;
+  held.clear();
+  resetStick();
+  if (playing()) show('pause');
+});
+
+function enableTouch() {
+  if (isTouch) return;
+  isTouch = true;
+  document.body.classList.add('touch');
+  updateFullscreenButton();
+  show(screen);
+  if (world && screen === null) showHint();
+}
+addEventListener('touchstart', enableTouch, { passive: true });
+// Block iOS pinch-zoom and long-press menus during play.
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('contextmenu', (e) => e.preventDefault());
 
 document.querySelectorAll('#touch [data-key]').forEach((b) => {
   const k = b.dataset.key;
@@ -240,9 +279,78 @@ document.querySelectorAll('#touch [data-key]').forEach((b) => {
   b.addEventListener('pointerleave', up);
 });
 
+// --- virtual joystick: touch anywhere on the left side, drag to move ------
+const STICK_R = 56;
+const DEAD_ZONE = 0.18;
+const stick = { id: null, ox: 0, oy: 0, x: 0, y: 0 };
+const stickZone = $('#stick-zone');
+const stickBase = $('#stick-base');
+const stickKnob = $('#stick-knob');
+
+function drawStick() {
+  stickKnob.style.transform = `translate(${stick.x * STICK_R}px, ${stick.y * STICK_R}px)`;
+}
+function resetStick() {
+  stick.id = null;
+  stick.x = stick.y = 0;
+  stickBase.classList.add('idle');
+  stickBase.style.left = stickBase.style.top = '';
+  drawStick();
+}
+stickZone.addEventListener('pointerdown', (e) => {
+  if (stick.id !== null) return;
+  e.preventDefault();
+  stickZone.setPointerCapture?.(e.pointerId);
+  Object.assign(stick, { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: 0, y: 0 });
+  stickBase.classList.remove('idle');
+  stickBase.style.left = `${e.clientX}px`;
+  stickBase.style.top = `${e.clientY}px`;
+  drawStick();
+});
+stickZone.addEventListener('pointermove', (e) => {
+  if (e.pointerId !== stick.id) return;
+  e.preventDefault();
+  let dx = e.clientX - stick.ox, dy = e.clientY - stick.oy;
+  const len = Math.hypot(dx, dy);
+  if (len > STICK_R) {
+    // Drag the base along with the finger so direction changes stay instant.
+    stick.ox += dx * (1 - STICK_R / len);
+    stick.oy += dy * (1 - STICK_R / len);
+    stickBase.style.left = `${stick.ox}px`;
+    stickBase.style.top = `${stick.oy}px`;
+    dx *= STICK_R / len;
+    dy *= STICK_R / len;
+  }
+  stick.x = dx / STICK_R;
+  stick.y = dy / STICK_R;
+  drawStick();
+});
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+  stickZone.addEventListener(type, (e) => { if (e.pointerId === stick.id) resetStick(); });
+}
+
+// --- fullscreen ---------------------------------------------------------
+const fsSupported = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+function updateFullscreenButton() {
+  $('.fs-btn').classList.toggle('hidden', !(isTouch && fsSupported));
+}
+function toggleFullscreen() {
+  const el = document.documentElement;
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+  } else {
+    (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el, { navigationUI: 'hide' })?.catch?.(() => {});
+  }
+}
+updateFullscreenButton();
+
 function readInput() {
-  const mx = (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0);
-  const mz = (held.has('down') ? 1 : 0) - (held.has('up') ? 1 : 0);
+  let mx = (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0);
+  let mz = (held.has('down') ? 1 : 0) - (held.has('up') ? 1 : 0);
+  if (Math.hypot(stick.x, stick.y) > DEAD_ZONE) {
+    mx += stick.x;
+    mz += stick.y;
+  }
   const input = {
     mx, mz,
     jump: held.has('jump'),
@@ -263,12 +371,13 @@ const [heroGltf, badgeGltf] = await Promise.all([
   loader.loadAsync(`${base}models/dli-hero.glb`),
   loader.loadAsync(`${base}models/dlicom-badge.glb`),
 ]);
-scene = new GameScene(canvas, { heroGltf, badgeGltf });
+scene = new GameScene(canvas, { heroGltf, badgeGltf, lowPower });
 
 function resize() {
   scene.resize(innerWidth, innerHeight);
 }
 addEventListener('resize', resize);
+addEventListener('orientationchange', () => setTimeout(resize, 200));
 resize();
 
 // Title background: a live demo room behind the menu.
@@ -296,11 +405,16 @@ function loop() {
       lastEchoCount = world.echoes.length;
       $('#hud-echoes').textContent = lastEchoCount;
     }
-    $('#prompt').classList.toggle('hidden', !(playing() && world.nearTerminal));
+    const canQuiz = !!(playing() && world.nearTerminal);
+    $('#prompt').classList.toggle('hidden', !canQuiz);
+    $('.t-use').classList.toggle('ready', canQuiz);
   }
   scene.frame(dt);
 }
 
 // Test/automation hook.
-window.__game = { get world() { return world; }, get quiz() { return quiz; }, startLevel, answerQuiz, show, get screen() { return screen; } };
+window.__game = {
+  get world() { return world; }, get quiz() { return quiz; }, get stick() { return { ...stick }; }, lowPower,
+  startLevel, answerQuiz, show, get screen() { return screen; },
+};
 window.__ready = true;

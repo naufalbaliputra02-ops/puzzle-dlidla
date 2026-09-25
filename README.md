@@ -12,7 +12,24 @@ pnpm dev        # open http://localhost:5173
 ```
 
 **Controls:** `WASD`/arrows move · `Space` jump · `R` leave an Echo · `X` shatter newest Echo ·
-`E` use a quiz terminal · `1`–`4` answer · `Esc` pause. Phones and tablets get on-screen buttons.
+`E` use a quiz terminal · `1`–`4` answer · `Esc` pause.
+
+### Playing on a phone
+
+Touch devices switch to mobile controls automatically: drag anywhere on the left half of the
+screen for a floating joystick, and use the **JUMP**, **ECHO**, **SHATTER** and **QUIZ** buttons
+on the right (QUIZ glows when a terminal is in reach). Portrait and landscape both work, and the
+camera pulls back in portrait so the room stays visible. Phones get a lighter renderer (lower
+pixel ratio, smaller shadow map, no glass transmission pass). Use `?hq` to force full quality
+or `?lq` to force the lighter one. The game pauses itself when you leave the app, there is a
+⛶ fullscreen button on Android, and "Add to Home Screen" installs it as a fullscreen web app.
+
+![Mobile](docs/mobile.png)
+
+**Public link for phones:** `docs/github-pages-workflow.yml` tests and builds every PR and
+deploys `main` to GitHub Pages. To turn it on, copy it to `.github/workflows/deploy.yml` and enable
+**Settings → Pages → Source: GitHub Actions**. The game is then at
+`https://<owner>.github.io/puzzle-dlidla/`.
 
 The game has 11 levels that teach one mechanic at a time: pressure plates and doors,
 Echo steps, spike bridges, laser curtains blocked by Echoes, stacking, Echo limits, and
