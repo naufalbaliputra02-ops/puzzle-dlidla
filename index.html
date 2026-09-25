@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1440" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Dli Echoes" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <title>Dli: Echoes — every failure becomes part of the level</title>
+    <link rel="stylesheet" href="/src/game/game.css" />
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+
+    <div id="loading" class="screen show"><div class="spinner"></div><p>Loading…</p></div>
+
+    <section id="title" class="screen">
+      <div class="card title-card">
+        <div class="logo" data-logo></div>
+        <h1>DLI<span>: ECHOES</span></h1>
+        <p class="tagline">Every failure becomes part of the level.</p>
+        <button class="big primary" data-action="play">Play</button>
+        <button class="big" data-action="levels">Select Level</button>
+        <button class="big" data-action="howto">How to Play</button>
+        <p class="small">A Dlicom puzzle-platformer</p>
+      </div>
+    </section>
+
+    <section id="levels" class="screen">
+      <div class="card wide">
+        <h2>Select Level</h2>
+        <div id="level-grid" class="level-grid"></div>
+        <div class="row">
+          <button data-action="title">Back</button>
+          <button data-action="howto">How to Play</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="howto" class="screen">
+      <div class="card wide scroll">
+        <h2>How to Play</h2>
+        <p class="lead">
+          Guide <b>Dli</b> to the <b class="c-cyan">glowing portal</b> in every room.
+          Every time you fail, you leave behind a solid crystal <b class="c-cyan">Echo</b> of yourself.
+          Echoes stay in the level, so your failures become the tools that solve the puzzle.
+        </p>
+
+        <h3>Controls</h3>
+        <div class="touch-only">
+          <p class="small">Phone / tablet</p>
+          <table class="keys">
+            <tr><td><span class="tchip">Left side of the screen</span></td><td>Drag anywhere to move (virtual joystick)</td></tr>
+            <tr><td><span class="tchip blue">⤒ JUMP</span></td><td>Jump</td></tr>
+            <tr><td><span class="tchip">💠 ECHO</span></td><td>Leave an Echo on purpose and respawn</td></tr>
+            <tr><td><span class="tchip">✖ SHATTER</span></td><td>Shatter your newest Echo</td></tr>
+            <tr><td><span class="tchip orange">? QUIZ</span></td><td>Use a quiz terminal (it glows when one is in reach)</td></tr>
+            <tr><td><span class="tchip">❚❚</span></td><td>Pause (restart, level select)</td></tr>
+          </table>
+          <p class="small">Tip: play in landscape, or tap ⛶ for fullscreen. Use "Add to Home Screen" to play it like an app.</p>
+        </div>
+        <p class="small touch-only">Keyboard</p>
+        <table class="keys">
+          <tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></td><td>Move</td></tr>
+          <tr><td><kbd>Space</kbd></td><td>Jump</td></tr>
+          <tr><td><kbd>R</kbd></td><td>Leave an Echo on purpose and respawn</td></tr>
+          <tr><td><kbd>X</kbd></td><td>Shatter your newest Echo</td></tr>
+          <tr><td><kbd>E</kbd> / <kbd>Enter</kbd></td><td>Use a quiz terminal</td></tr>
+          <tr><td><kbd>1</kbd>–<kbd>4</kbd></td><td>Pick a quiz answer</td></tr>
+          <tr><td><kbd>Esc</kbd> / <kbd>P</kbd></td><td>Pause (restart, level select)</td></tr>
+        </table>
+        <p class="small kb-only">On phones and tablets, on-screen controls appear automatically.</p>
+
+        <h3>What Echoes can do</h3>
+        <ul class="rules">
+          <li><b>Stand on them.</b> An Echo is a solid 1.2 m block. Use it as a step to reach ledges you can't jump to.</li>
+          <li><b>Hold pressure plates.</b> Doors open while every plate with their letter and color is pressed.</li>
+          <li><b>Block lasers.</b> A laser curtain stops at the first Echo in its path.</li>
+          <li><b>Cover spikes.</b> Echoes don't mind spikes, so walk across on top of them.</li>
+          <li><b>Stack them.</b> Leave an Echo while standing on one to build higher.</li>
+        </ul>
+
+        <h3>Level elements</h3>
+        <ul class="legend">
+          <li><i class="sw plate"></i><b>Pressure plate + door:</b> same letter and color. The door stays open only while its plates are held.</li>
+          <li><i class="sw term"></i><b>Quiz terminal:</b> walk up and press <kbd>E</kbd>. The right answer unlocks the matching door for good. A wrong answer <b>zaps</b> you, which leaves an Echo.</li>
+          <li><i class="sw spike"></i><b>Spikes:</b> touching them kills you.</li>
+          <li><i class="sw laser"></i><b>Laser curtain:</b> deadly and too tall to jump over. Block it with an Echo.</li>
+          <li><i class="sw raised"></i><b>Ledges:</b> you can jump onto 1 m blocks. Anything higher needs an Echo.</li>
+          <li><i class="sw check"></i><b>Checkpoint:</b> step on the ring to respawn there.</li>
+          <li><i class="sw goal"></i><b>Portal:</b> reach it to finish the level.</li>
+        </ul>
+
+        <h3>Rules</h3>
+        <ul class="rules">
+          <li>Each level has an <b>Echo limit</b>. Leaving one more makes your <b>oldest</b> Echo shatter.</li>
+          <li>Falling into the void leaves <b>no</b> Echo.</li>
+          <li>Finish with deaths at or under the level's <b>par</b> for ⭐⭐⭐.</li>
+        </ul>
+        <div class="row"><button class="primary" data-action="back">Got it!</button></div>
+      </div>
+    </section>
+
+    <section id="hud" class="hidden">
+      <div class="hud-left">
+        <div id="hud-level" class="hud-title"></div>
+        <div class="hud-stats">
+          <span title="Deaths">💀 <b id="hud-deaths">0</b> <small>/ par <span id="hud-par">0</span></small></span>
+          <span title="Echoes">💠 <b id="hud-echoes">0</b> <small>/ <span id="hud-max">0</span></small></span>
+          <span title="Time">⏱ <b id="hud-time">0.0</b></span>
+        </div>
+      </div>
+      <div class="hud-right">
+        <button class="icon fs-btn hidden" data-action="fullscreen" title="Fullscreen">⛶</button>
+        <button class="icon" data-action="hint" title="Show hint">💡</button>
+        <button class="icon" data-action="howto" title="How to play">?</button>
+        <button class="icon" data-action="pause" title="Pause">❚❚</button>
+      </div>
+      <div id="hint" class="hint"></div>
+      <button id="prompt" class="prompt hidden" data-action="use">
+        <span class="kb-only">Press <kbd>E</kbd> to answer the quiz</span><span class="touch-only">Tap here or <b>? QUIZ</b> to answer</span>
+      </button>
+      <div id="toasts"></div>
+      <div class="keys-bar">WASD move · SPACE jump · R leave Echo · X shatter · E quiz · ESC pause</div>
+    </section>
+
+    <div id="touch" class="hidden">
+      <div id="stick-zone"></div>
+      <div id="stick-base" class="idle"><div id="stick-knob"></div></div>
+      <div class="actions">
+        <button data-key="jump" class="t-jump" aria-label="Jump">⤒<small>JUMP</small></button>
+        <button data-key="echo" class="t-echo" aria-label="Leave Echo">💠<small>ECHO</small></button>
+        <button data-key="shatter" class="t-shatter" aria-label="Shatter Echo">✖<small>SHATTER</small></button>
+        <button data-key="interact" class="t-use" aria-label="Quiz">?<small>QUIZ</small></button>
+      </div>
+    </div>
+
+    <section id="quiz" class="screen">
+      <div class="card quiz-card">
+        <div class="quiz-head"><span id="quiz-door" class="door-chip">A</span><span id="quiz-cat">Logic</span></div>
+        <h2 id="quiz-q"></h2>
+        <div id="quiz-choices" class="choices"></div>
+        <p id="quiz-feedback" class="feedback"></p>
+        <p class="small warn">⚡ Wrong answer = ZAP! You leave an Echo right here.</p>
+        <button data-action="quiz-cancel">Walk away<span class="kb-only"> (Esc)</span></button>
+      </div>
+    </section>
+
+    <section id="pause" class="screen">
+      <div class="card">
+        <h2>Paused</h2>
+        <button class="big primary" data-action="resume">Resume</button>
+        <button class="big" data-action="restart">Restart Level</button>
+        <button class="big" data-action="levels">Select Level</button>
+        <button class="big" data-action="howto">How to Play</button>
+        <button class="big" data-action="title">Main Menu</button>
+      </div>
+    </section>
+
+    <section id="complete" class="screen">
+      <div class="card">
+        <p class="small">LEVEL COMPLETE</p>
+        <h2 id="complete-name"></h2>
+        <div id="complete-stars" class="stars"></div>
+        <p id="complete-stats"></p>
+        <p id="complete-quote" class="small"></p>
+        <button class="big primary" data-action="next">Next Level</button>
+        <button class="big" data-action="restart">Replay</button>
+        <button class="big" data-action="levels">Select Level</button>
+      </div>
+    </section>
+
+    <script type="module" src="/src/game/main.js"></script>
+  </body>
+</html>
