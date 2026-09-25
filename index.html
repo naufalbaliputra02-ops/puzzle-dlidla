@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dli Echo Hero — asset viewer</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+    <aside id="panel">
+      <h1>Dli <span>Echo Hero</span></h1>
+      <p class="sub">Every failure becomes part of the level.</p>
+      <div class="group">
+        <label>Animation</label>
+        <div id="clips" class="row"></div>
+      </div>
+      <div class="group">
+        <button id="die" class="primary">Die → leave an Echo</button>
+        <button id="clear">Clear Echoes</button>
+      </div>
+      <div class="group">
+        <label>Focus</label>
+        <div class="row">
+          <button data-focus="scene">Scene</button>
+          <button data-focus="hero">Hero</button>
+          <button data-focus="echo">Echo</button>
+          <button data-focus="badge">Logo</button>
+        </div>
+      </div>
+      <p id="status" class="sub"></p>
+    </aside>
+    <script type="module" src="/src/viewer.js"></script>
+  </body>
+</html>
